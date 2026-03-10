@@ -7,25 +7,23 @@ export function DistantSkylineRing() {
 
   const matrices = useMemo(() => {
     const mats: THREE.Matrix4[] = [];
-    // Seeded pseudo-random using simple LCG
     let seed = 99371;
     const rand = () => {
       seed = (seed * 1664525 + 1013904223) & 0xffffffff;
       return (seed >>> 0) / 0xffffffff;
     };
 
-    // Distribute in clusters around the ring
     const clusterCount = 12;
     for (let c = 0; c < clusterCount; c++) {
       const clusterAngle = (c / clusterCount) * Math.PI * 2;
-      const buildingsInCluster = Math.round(5 + rand() * 4); // 5–9 per cluster
+      const buildingsInCluster = Math.round(5 + rand() * 4);
       for (let b = 0; b < buildingsInCluster && mats.length < count; b++) {
         const angleOffset = (rand() - 0.5) * 0.45;
         const angle = clusterAngle + angleOffset;
-        const radius = 650 + rand() * 100; // 650–750
-        const w = 8 + rand() * 14; // 8–22
-        const d = 8 + rand() * 14; // 8–22
-        const h = 40 + rand() * 140; // 40–180
+        const radius = 650 + rand() * 100;
+        const w = 8 + rand() * 14;
+        const d = 8 + rand() * 14;
+        const h = 40 + rand() * 140;
 
         const x = Math.cos(angle) * radius;
         const z = Math.sin(angle) * radius;
@@ -55,11 +53,11 @@ export function DistantSkylineRing() {
     <instancedMesh ref={meshRef} args={[undefined, undefined, count]}>
       <boxGeometry args={[1, 1, 1]} />
       <meshStandardMaterial
-        color="#0a0e14"
-        emissive="#00e5ff"
-        emissiveIntensity={0.12}
-        metalness={0.9}
-        roughness={0.4}
+        color="#060810"
+        emissive="#0a1820"
+        emissiveIntensity={0.04}
+        metalness={0.95}
+        roughness={0.5}
       />
     </instancedMesh>
   );

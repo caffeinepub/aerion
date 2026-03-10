@@ -1,103 +1,127 @@
-const GLASS_BAND_YS = [16, 36, 56, 76, 96, 116, 136, 156, 176];
-const CROWN_RING_YS = [196, 202, 208];
+const GLASS_BAND_YS = [20, 42, 64, 86, 108, 130, 152, 174, 194];
+const CROWN_RING_YS = [198, 204, 210];
 const CROWN_RING_RADII = [16, 13, 10];
-const CROWN_RING_INTENSITIES = [1.2, 1.0, 0.8];
 const WINDOW_STRIP_COUNT = 8;
 
 export function MegaTower() {
   return (
     <group position={[0, 0, 0]}>
-      {/* Base plinth */}
       <mesh position={[0, 4, 0]}>
-        <boxGeometry args={[22, 8, 22]} />
+        <boxGeometry args={[24, 8, 24]} />
         <meshStandardMaterial
-          color="#e8ecf0"
-          metalness={0.65}
-          roughness={0.25}
+          color="#090c10"
+          metalness={0.88}
+          roughness={0.18}
+        />
+      </mesh>
+      <mesh position={[0, 10, 0]}>
+        <boxGeometry args={[18, 4, 18]} />
+        <meshStandardMaterial
+          color="#0b0f15"
+          metalness={0.9}
+          roughness={0.14}
+        />
+      </mesh>
+      <mesh position={[0, 106, 0]}>
+        <cylinderGeometry args={[6, 13, 204, 12]} />
+        <meshStandardMaterial
+          color="#080c14"
+          metalness={0.88}
+          roughness={0.12}
         />
       </mesh>
 
-      {/* Main shaft */}
-      <mesh position={[0, 100, 0]}>
-        <cylinderGeometry args={[7, 14, 192, 8]} />
-        <meshStandardMaterial color="#dce4f0" metalness={0.7} roughness={0.2} />
-      </mesh>
-
-      {/* Glass bands */}
       {GLASS_BAND_YS.map((y, bi) => (
         <mesh key={y} position={[0, y, 0]}>
-          <cylinderGeometry args={[14.2 - bi * 0.7, 14.2 - bi * 0.7, 2, 8]} />
+          <cylinderGeometry
+            args={[13.2 - bi * 0.7, 13.2 - bi * 0.7, 1.2, 12]}
+          />
           <meshStandardMaterial
-            color="#1a2030"
-            emissive={bi % 2 === 0 ? "#00e5ff" : "#ffd700"}
-            emissiveIntensity={0.4}
-            metalness={0.9}
-            roughness={0.05}
+            color="#04080e"
+            emissive="#00b8b0"
+            emissiveIntensity={0.18}
+            metalness={0.92}
+            roughness={0.04}
             transparent
-            opacity={0.9}
+            opacity={0.88}
           />
         </mesh>
       ))}
 
-      {/* Crown platform */}
-      <mesh position={[0, 196, 0]}>
-        <cylinderGeometry args={[18, 10, 6, 16]} />
+      <mesh position={[0, 198, 0]}>
+        <cylinderGeometry args={[17, 9, 5, 16]} />
         <meshStandardMaterial
-          color="#e8ecf0"
-          metalness={0.8}
-          roughness={0.15}
+          color="#0c1018"
+          metalness={0.88}
+          roughness={0.12}
         />
       </mesh>
 
-      {/* Crown rings */}
       {CROWN_RING_YS.map((y, ci) => (
         <mesh key={y} position={[0, y, 0]}>
-          <torusGeometry args={[CROWN_RING_RADII[ci], 0.8, 8, 64]} />
+          <torusGeometry args={[CROWN_RING_RADII[ci], 0.7, 8, 64]} />
           <meshStandardMaterial
-            color="#003344"
-            emissive="#00e5ff"
-            emissiveIntensity={CROWN_RING_INTENSITIES[ci]}
+            color="#001414"
+            emissive="#00c8be"
+            emissiveIntensity={0.9}
             metalness={0.9}
-            roughness={0.05}
+            roughness={0.04}
           />
         </mesh>
       ))}
 
-      {/* Crown spire */}
-      <mesh position={[0, 230, 0]}>
-        <cylinderGeometry args={[0.3, 1.5, 40, 8]} />
-        <meshStandardMaterial color="#e8ecf0" metalness={0.9} roughness={0.1} />
-      </mesh>
-
-      {/* Spire tip glow */}
-      <mesh position={[0, 252, 0]}>
-        <sphereGeometry args={[1.2, 12, 8]} />
+      <mesh position={[0, 234, 0]}>
+        <cylinderGeometry args={[0.2, 1.2, 42, 8]} />
         <meshStandardMaterial
-          color="#003344"
-          emissive="#00e5ff"
-          emissiveIntensity={2.0}
+          color="#0c1018"
+          metalness={0.92}
+          roughness={0.08}
+        />
+      </mesh>
+      <mesh position={[0, 256, 0]}>
+        <sphereGeometry args={[1.0, 10, 7]} />
+        <meshStandardMaterial
+          color="#001212"
+          emissive="#00c8be"
+          emissiveIntensity={2.5}
         />
       </mesh>
 
-      {/* Vertical gold window strips */}
       {Array.from({ length: WINDOW_STRIP_COUNT }, (_, si) => {
         const angle = (si / WINDOW_STRIP_COUNT) * Math.PI * 2;
-        const x = Math.cos(angle) * 7.2;
-        const z = Math.sin(angle) * 7.2;
-        const keyStr = `ws-${si}`;
+        const x = Math.cos(angle) * 7.0;
+        const z = Math.sin(angle) * 7.0;
+        const stripKey = `ws-${si}`;
         return (
-          <mesh key={keyStr} position={[x, 95, z]} rotation={[0, -angle, 0]}>
-            <boxGeometry args={[0.8, 160, 0.3]} />
+          <mesh key={stripKey} position={[x, 98, z]} rotation={[0, -angle, 0]}>
+            <boxGeometry args={[0.6, 168, 0.2]} />
             <meshStandardMaterial
-              color="#332200"
-              emissive="#ffd700"
-              emissiveIntensity={0.3}
+              color="#0e0a04"
+              emissive="#f0e8d0"
+              emissiveIntensity={0.22}
               metalness={0.8}
               roughness={0.1}
             />
           </mesh>
         );
       })}
+
+      <mesh position={[0, 185, 0]}>
+        <cylinderGeometry args={[8.5, 7.5, 3, 12]} />
+        <meshStandardMaterial
+          color="#0d1015"
+          metalness={0.85}
+          roughness={0.25}
+        />
+      </mesh>
+      <mesh position={[3, 216, 0]}>
+        <cylinderGeometry args={[0.12, 0.12, 14, 4]} />
+        <meshStandardMaterial color="#0c1018" metalness={0.9} roughness={0.2} />
+      </mesh>
+      <mesh position={[-3, 212, 0]}>
+        <cylinderGeometry args={[0.1, 0.1, 10, 4]} />
+        <meshStandardMaterial color="#0c1018" metalness={0.9} roughness={0.2} />
+      </mesh>
     </group>
   );
 }

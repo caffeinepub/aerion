@@ -23,17 +23,69 @@ interface BuildingConfig {
   width: number;
   depth: number;
   height: number;
-  type: number; // 0=metallic, 1=glass, 2=cyan, 3=gold, 4=spire, 5=stepped
+  colorGroup: number;
 }
 
-// Instanced mesh for a single material type (box buildings)
-function InstancedBoxBuildings({
+function createWindowTex(seed: number): THREE.DataTexture {
+  const w = 128;
+  const h = 256;
+  const data = new Uint8Array(w * h * 4);
+  let s = seed;
+  const rand = () => {
+    s = (s * 1664525 + 1013904223) & 0x7fffffff;
+    return s / 0x7fffffff;
+  };
+  for (let i = 0; i < w * h * 4; i += 4) {
+    data[i] = 3;
+    data[i + 1] = 4;
+    data[i + 2] = 7;
+    data[i + 3] = 255;
+  }
+  const cols = 8;
+  const rows = 32;
+  const winW = Math.floor(w / cols);
+  const winH = Math.floor(h / rows);
+  for (let row = 0; row < rows; row++) {
+    // 70% floors lit
+    const floorLit = rand() < 0.7;
+    for (let col = 0; col < cols; col++) {
+      const lit = floorLit ? rand() < 0.9 : rand() < 0.04;
+      if (!lit) continue;
+      const t = rand();
+      // Warm white — near white with amber tint
+      const r = Math.floor(248 + t * 7);
+      const g = Math.floor(208 + t * 37);
+      const b = Math.floor(120 + t * 80);
+      const sx = col * winW + 1;
+      const sy = row * winH + 1;
+      const ex = sx + winW - 2;
+      const ey = sy + winH - 2;
+      for (let py = sy; py < ey && py < h; py++) {
+        for (let px = sx; px < ex && px < w; px++) {
+          const idx = (py * w + px) * 4;
+          data[idx] = r;
+          data[idx + 1] = g;
+          data[idx + 2] = b;
+          data[idx + 3] = 255;
+        }
+      }
+    }
+  }
+  const tex = new THREE.DataTexture(data, w, h, THREE.RGBAFormat);
+  tex.needsUpdate = true;
+  tex.wrapS = THREE.RepeatWrapping;
+  tex.wrapT = THREE.RepeatWrapping;
+  return tex;
+}
+
+function InstancedBuildings({
   buildings,
   color,
   emissive,
   emissiveIntensity,
   metalness,
   roughness,
+  emissiveMap,
   transparent,
   opacity,
 }: {
@@ -43,11 +95,11 @@ function InstancedBoxBuildings({
   emissiveIntensity: number;
   metalness: number;
   roughness: number;
+  emissiveMap?: THREE.DataTexture;
   transparent?: boolean;
   opacity?: number;
 }) {
   const meshRef = useRef<THREE.InstancedMesh>(null);
-
   useEffect(() => {
     if (!meshRef.current || buildings.length === 0) return;
     const mat = new THREE.Matrix4();
@@ -61,9 +113,7 @@ function InstancedBoxBuildings({
     });
     meshRef.current.instanceMatrix.needsUpdate = true;
   }, [buildings]);
-
   if (buildings.length === 0) return null;
-
   return (
     <instancedMesh
       ref={meshRef}
@@ -74,6 +124,7 @@ function InstancedBoxBuildings({
         color={color}
         emissive={emissive}
         emissiveIntensity={emissiveIntensity}
+        emissiveMap={emissiveMap}
         metalness={metalness}
         roughness={roughness}
         transparent={transparent}
@@ -92,14 +143,11 @@ export function SkyscraperCluster({
   const buildings = useMemo(() => {
     const rand = seededRandom(seed + platformRadius * 100);
     const result: BuildingConfig[] = [];
-
-    // Spread across 3 rings, slightly beyond platform edge for 360° coverage
     const rings = [
       { count: Math.floor(buildingCount * 0.35), rMin: 0.08, rMax: 0.42 },
       { count: Math.floor(buildingCount * 0.4), rMin: 0.42, rMax: 0.72 },
       { count: Math.ceil(buildingCount * 0.25), rMin: 0.72, rMax: 1.05 },
     ];
-
     let bIdx = 0;
     for (const ring of rings) {
       for (let bi = 0; bi < ring.count; bi++) {
@@ -107,193 +155,103 @@ export function SkyscraperCluster({
         const angle = (bi / ring.count) * Math.PI * 2 + angleOffset;
         const r =
           platformRadius * (ring.rMin + rand() * (ring.rMax - ring.rMin));
-        const type = Math.floor(rand() * 6);
+        const colorGroup = Math.floor(rand() * 5);
+        const widthVar = 3 + rand() * 9;
         result.push({
           key: `b${seed}-${bIdx++}`,
           x: Math.cos(angle) * r,
           z: Math.sin(angle) * r,
-          width: 3 + rand() * 8,
-          depth: 3 + rand() * 8,
-          height: 18 + rand() * 100,
-          type,
+          width: widthVar,
+          depth: 3 + rand() * 9,
+          height: 15 + rand() * 110,
+          colorGroup,
         });
       }
     }
     return result;
   }, [seed, platformRadius, buildingCount]);
 
-  // Split by instanced groups
-  const metallicBuildings = useMemo(
-    () => buildings.filter((b) => b.type === 0),
+  const tex0 = useMemo(() => createWindowTex(seed * 7 + 1), [seed]);
+  const tex1 = useMemo(() => createWindowTex(seed * 13 + 5), [seed]);
+  const tex2 = useMemo(() => createWindowTex(seed * 31 + 9), [seed]);
+
+  const g0 = useMemo(
+    () => buildings.filter((b) => b.colorGroup === 0),
     [buildings],
   );
-  const glassBuildings = useMemo(
-    () => buildings.filter((b) => b.type === 1),
+  const g1 = useMemo(
+    () => buildings.filter((b) => b.colorGroup === 1),
     [buildings],
   );
-  const cyanBuildings = useMemo(
-    () => buildings.filter((b) => b.type === 2),
+  const g2 = useMemo(
+    () => buildings.filter((b) => b.colorGroup === 2),
     [buildings],
   );
-  const goldBuildings = useMemo(
-    () => buildings.filter((b) => b.type === 3),
+  const g3 = useMemo(
+    () => buildings.filter((b) => b.colorGroup === 3),
     [buildings],
   );
-  const spireBuildings = useMemo(
-    () => buildings.filter((b) => b.type === 4),
-    [buildings],
-  );
-  const steppedBuildings = useMemo(
-    () => buildings.filter((b) => b.type === 5),
+  const g4 = useMemo(
+    () => buildings.filter((b) => b.colorGroup === 4),
     [buildings],
   );
 
   return (
     <group position={position}>
-      {/* Instanced box buildings per material */}
-      <InstancedBoxBuildings
-        buildings={metallicBuildings}
-        color="#e8ecf0"
-        emissive="#001020"
-        emissiveIntensity={0.15}
-        metalness={0.65}
-        roughness={0.25}
-      />
-      <InstancedBoxBuildings
-        buildings={glassBuildings}
-        color="#1a2030"
-        emissive="#00e5ff"
-        emissiveIntensity={0.5}
-        metalness={0.85}
+      {/* Dark graphite steel — warm white windows */}
+      <InstancedBuildings
+        buildings={g0}
+        color="#040608"
+        emissive="#fff5e0"
+        emissiveIntensity={2.8}
+        emissiveMap={tex0}
+        metalness={0.92}
         roughness={0.1}
+      />
+      {/* Deep blue-black glass */}
+      <InstancedBuildings
+        buildings={g1}
+        color="#030810"
+        emissive="#ffe8c0"
+        emissiveIntensity={3.2}
+        emissiveMap={tex1}
+        metalness={0.95}
+        roughness={0.04}
         transparent
-        opacity={0.88}
+        opacity={0.94}
       />
-      <InstancedBoxBuildings
-        buildings={cyanBuildings}
-        color="#0d1e2a"
-        emissive="#00e5ff"
-        emissiveIntensity={0.55}
-        metalness={0.8}
-        roughness={0.1}
+      {/* Dark concrete */}
+      <InstancedBuildings
+        buildings={g2}
+        color="#070707"
+        emissive="#ffd8a0"
+        emissiveIntensity={2.4}
+        emissiveMap={tex2}
+        metalness={0.25}
+        roughness={0.65}
       />
-      <InstancedBoxBuildings
-        buildings={goldBuildings}
-        color="#1a1000"
-        emissive="#ffd700"
-        emissiveIntensity={0.5}
-        metalness={0.8}
-        roughness={0.1}
+      {/* Dark charcoal */}
+      <InstancedBuildings
+        buildings={g3}
+        color="#050708"
+        emissive="#fff0d0"
+        emissiveIntensity={2.6}
+        emissiveMap={tex0}
+        metalness={0.84}
+        roughness={0.22}
       />
-
-      {/* Spire buildings — slender box, rendered individually */}
-      {spireBuildings.map((b) => (
-        <group key={b.key}>
-          <mesh position={[b.x, b.height / 2, b.z]}>
-            <boxGeometry args={[b.width * 0.4, b.height, b.depth * 0.4]} />
-            <meshStandardMaterial
-              color="#c8d4e0"
-              metalness={0.75}
-              roughness={0.2}
-              emissive="#00e5ff"
-              emissiveIntensity={0.2}
-            />
-          </mesh>
-          {b.height > 50 && (
-            <mesh position={[b.x, b.height + 6, b.z]}>
-              <cylinderGeometry args={[0.12, 0.12, 12, 5]} />
-              <meshStandardMaterial
-                color="#003344"
-                emissive="#00e5ff"
-                emissiveIntensity={0.8}
-              />
-            </mesh>
-          )}
-          <mesh position={[b.x, b.height + 10, b.z]}>
-            <coneGeometry args={[0.3, 8, 4]} />
-            <meshStandardMaterial
-              color="#e8ecf0"
-              metalness={0.9}
-              roughness={0.1}
-            />
-          </mesh>
-        </group>
-      ))}
-
-      {/* Stepped buildings — multi-part, rendered individually */}
-      {steppedBuildings.map((b) => (
-        <group key={b.key}>
-          <mesh position={[b.x, b.height * 0.15, b.z]}>
-            <boxGeometry args={[b.width, b.height * 0.3, b.depth]} />
-            <meshStandardMaterial
-              color="#14181e"
-              metalness={0.9}
-              roughness={0.15}
-              emissive="#ffd700"
-              emissiveIntensity={0.2}
-            />
-          </mesh>
-          <mesh position={[b.x, b.height * 0.55, b.z]}>
-            <boxGeometry
-              args={[b.width * 0.75, b.height * 0.4, b.depth * 0.75]}
-            />
-            <meshStandardMaterial
-              color="#14181e"
-              metalness={0.9}
-              roughness={0.15}
-              emissive="#ffd700"
-              emissiveIntensity={0.28}
-            />
-          </mesh>
-          <mesh position={[b.x, b.height * 0.85, b.z]}>
-            <boxGeometry
-              args={[b.width * 0.5, b.height * 0.3, b.depth * 0.5]}
-            />
-            <meshStandardMaterial
-              color="#14181e"
-              metalness={0.9}
-              roughness={0.15}
-              emissive="#ffd700"
-              emissiveIntensity={0.4}
-            />
-          </mesh>
-          <mesh position={[b.x, b.height * 0.3 + 0.5, b.z]}>
-            <torusGeometry args={[b.width * 0.55, 0.25, 4, 24]} />
-            <meshStandardMaterial
-              color="#003344"
-              emissive="#ffd700"
-              emissiveIntensity={0.6}
-            />
-          </mesh>
-          <mesh position={[b.x, b.height * 0.75 + 0.5, b.z]}>
-            <torusGeometry args={[b.width * 0.41, 0.25, 4, 24]} />
-            <meshStandardMaterial
-              color="#003344"
-              emissive="#ffd700"
-              emissiveIntensity={0.6}
-            />
-          </mesh>
-        </group>
-      ))}
-
-      {/* Rooftop antennas for tall non-stepped, non-spire buildings */}
-      {[
-        ...metallicBuildings,
-        ...glassBuildings,
-        ...cyanBuildings,
-        ...goldBuildings,
-      ]
-        .filter((b) => b.height > 50)
-        .map((b) => (
-          <mesh key={`ant-${b.key}`} position={[b.x, b.height + 6, b.z]}>
-            <cylinderGeometry args={[0.12, 0.12, 12, 5]} />
-            <meshStandardMaterial
-              color="#003344"
-              emissive="#00e5ff"
-              emissiveIntensity={0.8}
-            />
-          </mesh>
-        ))}
+      {/* Very dark tinted glass — brightest windows */}
+      <InstancedBuildings
+        buildings={g4}
+        color="#030610"
+        emissive="#fffae8"
+        emissiveIntensity={3.6}
+        emissiveMap={tex1}
+        metalness={0.97}
+        roughness={0.02}
+        transparent
+        opacity={0.92}
+      />
     </group>
   );
 }

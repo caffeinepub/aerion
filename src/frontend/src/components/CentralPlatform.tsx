@@ -21,13 +21,11 @@ function GridLines() {
     }[] = [];
     for (let i = 0; i < GRID_COUNT; i++) {
       const offset = (i - (GRID_COUNT - 1) / 2) * GRID_SPACING;
-      // X direction (runs along Z)
       result.push({
         key: `gx${i}`,
         pos: [offset, 0.12, 0],
         rot: [0, 0, 0],
       });
-      // Z direction (runs along X)
       result.push({
         key: `gz${i}`,
         pos: [0, 0.12, offset],
@@ -118,7 +116,6 @@ function PerimeterPylons() {
     <>
       {pylons.map((p) => (
         <group key={p.key} position={[p.x, 0, p.z]}>
-          {/* Pylon body */}
           <mesh position={[0, 4, 0]}>
             <boxGeometry args={[1.5, 8, 1.5]} />
             <meshStandardMaterial
@@ -129,7 +126,6 @@ function PerimeterPylons() {
               roughness={0.2}
             />
           </mesh>
-          {/* Glowing cap */}
           <mesh position={[0, 8.5, 0]}>
             <boxGeometry args={[1.8, 0.6, 1.8]} />
             <meshStandardMaterial
@@ -141,6 +137,153 @@ function PerimeterPylons() {
             />
           </mesh>
         </group>
+      ))}
+    </>
+  );
+}
+
+// Subtle edge light strips at cardinal/diagonal positions
+function EdgeLightStrips() {
+  const strips = useMemo(() => {
+    const angles = [0, 45, 90, 135, 180, 225];
+    return angles.map((deg, i) => {
+      const rad = (deg * Math.PI) / 180;
+      return {
+        key: `strip${i}`,
+        x: Math.cos(rad) * 56,
+        z: Math.sin(rad) * 56,
+        rotY: rad,
+      };
+    });
+  }, []);
+
+  return (
+    <>
+      {strips.map((s) => (
+        <mesh key={s.key} position={[s.x, 0.18, s.z]} rotation={[0, s.rotY, 0]}>
+          <boxGeometry args={[12, 0.1, 0.4]} />
+          <meshStandardMaterial
+            color="#001a22"
+            emissive="#00d4c8"
+            emissiveIntensity={0.6}
+            metalness={0.9}
+            roughness={0.1}
+          />
+        </mesh>
+      ))}
+    </>
+  );
+}
+
+// Dashed lane markers radiating from center
+function LaneMarkers() {
+  const markers = useMemo(() => {
+    const angles = [22.5, 67.5, 112.5, 157.5, 202.5, 247.5, 292.5, 337.5];
+    return angles.flatMap((deg, ai) => {
+      const rad = (deg * Math.PI) / 180;
+      return [20, 33, 46].map((r, ri) => ({
+        key: `lm${ai}-${ri}`,
+        x: Math.cos(rad) * r,
+        z: Math.sin(rad) * r,
+        rotY: rad,
+      }));
+    });
+  }, []);
+
+  return (
+    <>
+      {markers.map((m) => (
+        <mesh key={m.key} position={[m.x, 0.15, m.z]} rotation={[0, m.rotY, 0]}>
+          <boxGeometry args={[0.3, 0.06, 3.5]} />
+          <meshStandardMaterial
+            color="#0a1a22"
+            emissive="#1a3a4a"
+            emissiveIntensity={0.4}
+            metalness={0.7}
+            roughness={0.3}
+          />
+        </mesh>
+      ))}
+    </>
+  );
+}
+
+// Illuminated utility boxes near bridge entrance zones
+function UtilityBoxes() {
+  const boxes = useMemo(() => {
+    const angles = [45, 90, 135, 180, 225, 270, 315, 0];
+    return angles.map((deg, i) => {
+      const rad = (deg * Math.PI) / 180;
+      const r = 54 + (i % 2) * 3;
+      return {
+        key: `ub${i}`,
+        x: Math.cos(rad) * r,
+        z: Math.sin(rad) * r,
+      };
+    });
+  }, []);
+
+  return (
+    <>
+      {boxes.map((b) => (
+        <group key={b.key} position={[b.x, 0, b.z]}>
+          {/* Box body */}
+          <mesh position={[0, 1, 0]}>
+            <boxGeometry args={[1.5, 2, 1.5]} />
+            <meshStandardMaterial
+              color="#14181e"
+              metalness={0.9}
+              roughness={0.2}
+            />
+          </mesh>
+          {/* Glowing top cap */}
+          <mesh position={[0, 2.05, 0]}>
+            <boxGeometry args={[1.5, 0.1, 1.5]} />
+            <meshStandardMaterial
+              color="#001a22"
+              emissive="#00d4c8"
+              emissiveIntensity={0.9}
+              metalness={0.9}
+              roughness={0.05}
+            />
+          </mesh>
+        </group>
+      ))}
+    </>
+  );
+}
+
+// Low bollards near bridge connection points
+function BridgeBollards() {
+  const bollards = useMemo(() => {
+    const angles = [45, 135, 225, 315];
+    return angles.flatMap((deg, ai) => {
+      const rad = (deg * Math.PI) / 180;
+      return [-1, 0, 1].map((offset, oi) => {
+        const sideAngle = rad + offset * 0.08;
+        const r = 52 + oi * 1.5;
+        return {
+          key: `bb${ai}-${oi}`,
+          x: Math.cos(sideAngle) * r,
+          z: Math.sin(sideAngle) * r,
+        };
+      });
+    });
+  }, []);
+
+  return (
+    <>
+      {bollards.map((b) => (
+        <mesh key={b.key} position={[b.x, 1, b.z]}>
+          <cylinderGeometry args={[0.4, 0.5, 2, 6]} />
+          <meshStandardMaterial
+            color="#1c2030"
+            emissive="#00a8cc"
+            emissiveIntensity={0.5}
+            metalness={0.85}
+            roughness={0.2}
+          />
+        </mesh>
       ))}
     </>
   );
@@ -189,7 +332,7 @@ export function CentralPlatform() {
         </mesh>
       ))}
 
-      {/* Plaza detail — grid lines (clear of center radius 30) */}
+      {/* Plaza detail — grid lines */}
       <GridLines />
 
       {/* Plaza detail — glowing light spokes */}
@@ -200,6 +343,12 @@ export function CentralPlatform() {
 
       {/* Perimeter pylons */}
       <PerimeterPylons />
+
+      {/* Surface infrastructure details */}
+      <EdgeLightStrips />
+      <LaneMarkers />
+      <UtilityBoxes />
+      <BridgeBollards />
     </group>
   );
 }

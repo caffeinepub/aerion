@@ -2,12 +2,16 @@ import { Canvas } from "@react-three/fiber";
 import { AirTraffic } from "./AirTraffic";
 import { Atmosphere } from "./Atmosphere";
 import { CentralPlatform } from "./CentralPlatform";
+import { CinematicBuildingRing } from "./CinematicBuildingRing";
 import { DistantSkylineRing } from "./DistantSkylineRing";
 import { FirstPersonController } from "./FirstPersonController";
+import { GroundTraffic } from "./GroundTraffic";
+import { InnerSkyBridges } from "./InnerSkyBridges";
 import { MegaTower } from "./MegaTower";
 import { OUTER_POSITIONS, OuterPlatforms } from "./OuterPlatforms";
 import { SkyBridge } from "./SkyBridge";
 import { SkyscraperCluster } from "./SkyscraperCluster";
+import { TransportLanes } from "./TransportLanes";
 
 const BRIDGE_KEYS = ["br0", "br1", "br2", "br3"] as const;
 const CLUSTER_KEYS = ["cl0", "cl1", "cl2", "cl3"] as const;
@@ -23,6 +27,9 @@ export function Scene() {
       <CentralPlatform />
       <OuterPlatforms />
       <MegaTower />
+      <CinematicBuildingRing />
+      <InnerSkyBridges />
+      <TransportLanes />
 
       {/* Central platform — dense skyline, 80 buildings */}
       <SkyscraperCluster
@@ -52,6 +59,7 @@ export function Scene() {
       <DistantSkylineRing />
 
       <AirTraffic />
+      <GroundTraffic />
       <FirstPersonController />
     </Canvas>
   );
