@@ -2,6 +2,7 @@ import { Canvas } from "@react-three/fiber";
 import { AirTraffic } from "./AirTraffic";
 import { Atmosphere } from "./Atmosphere";
 import { CentralPlatform } from "./CentralPlatform";
+import { DistantSkylineRing } from "./DistantSkylineRing";
 import { FirstPersonController } from "./FirstPersonController";
 import { MegaTower } from "./MegaTower";
 import { OUTER_POSITIONS, OuterPlatforms } from "./OuterPlatforms";
@@ -14,7 +15,7 @@ const CLUSTER_KEYS = ["cl0", "cl1", "cl2", "cl3"] as const;
 export function Scene() {
   return (
     <Canvas
-      camera={{ fov: 75, near: 0.1, far: 900, position: [0, 18, 60] }}
+      camera={{ fov: 75, near: 0.1, far: 1400, position: [0, 40, 120] }}
       style={{ width: "100%", height: "100%" }}
       gl={{ antialias: true }}
     >
@@ -23,22 +24,22 @@ export function Scene() {
       <OuterPlatforms />
       <MegaTower />
 
-      {/* Central platform — dense skyline, 35 buildings */}
+      {/* Central platform — dense skyline, 80 buildings */}
       <SkyscraperCluster
         position={[0, 8, 0]}
         platformRadius={56}
         seed={42}
-        buildingCount={35}
+        buildingCount={80}
       />
 
-      {/* Outer platform skyscrapers — 17 each */}
+      {/* Outer platform skyscrapers — 25 each */}
       {OUTER_POSITIONS.map((pos, i) => (
         <SkyscraperCluster
           key={CLUSTER_KEYS[i]}
           position={[pos[0], pos[1] + 6, pos[2]]}
           platformRadius={36}
           seed={i * 31 + 13}
-          buildingCount={17}
+          buildingCount={25}
         />
       ))}
 
@@ -46,6 +47,9 @@ export function Scene() {
       {OUTER_POSITIONS.map((pos, i) => (
         <SkyBridge key={BRIDGE_KEYS[i]} targetPosition={pos} />
       ))}
+
+      {/* Distant city horizon silhouette ring */}
+      <DistantSkylineRing />
 
       <AirTraffic />
       <FirstPersonController />

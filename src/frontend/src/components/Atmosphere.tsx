@@ -64,8 +64,8 @@ export function Atmosphere() {
 
   return (
     <>
-      {/* Deep space fog */}
-      <fog attach="fog" args={["#06091a", 100, 520]} />
+      {/* Deep space fog — tightened for denser atmosphere */}
+      <fog attach="fog" args={["#06091a", 80, 480]} />
 
       {/* Ambient fill - slightly cool */}
       <ambientLight intensity={0.4} color="#8090c0" />
